@@ -10,98 +10,55 @@ import {
   Image,
   Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { fetchOrders } from '../services/fetchOrders';
-import OrderCard from '../components/OrderCard';
 
+const OrderCard = ({ order, onPress }) => {
+  const { restaurant, payout, currency = 'PHP', estimatedDistance, estimatedTime } = order;
 
-const AvailableOrdersScreen = ({ navigation }) => {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState(null);
-
-  const loadOrders = useCallback(async (isRefresh = false) => {
-    if (!isRefresh) setLoading(true);
-    setError(null);
-
-    try {
-      const data = await fetchOrders();
-      setOrders(data || []);
-    } catch (err) {
-      console.error('Failed to fetch orders:', err);
-      setError('Could not load orders. Please check your connection and try again.');
-    } finally {
-      setLoading(false);
-      if (isRefresh) setRefreshing(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadOrders();
-  }, [loadOrders]);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadOrders(true);
-  };
-
-  const handleOrderPress = (order) => {
-    navigation.navigate('OrderDetails', { order });
-  };
-
-  if (loading && !refreshing) {
-    return (
-      <SafeAreaView style={styles.center} edges={['top', 'left', 'right']}>
-        <ActivityIndicator size="large" color="#FF6B35" />
-        <Text style={styles.loadingText}>Finding available orders...</Text>
-      </SafeAreaView>
-    );
-  }
-
-  if (error) {
-    return (
-      <SafeAreaView style={styles.center} edges={['top', 'left', 'right']}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={() => loadOrders()}>
-          <Text style={styles.retryText}>Try Again</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    );
-  }
+  // Placeholder for restaurant logo (replace with real URL when available)
+  const placeholderLogo = "";
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <Text style={styles.screenTitle}>Available Orders</Text>
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.88}>
+      <View style={styles.cardInner}>
+        <Image
+          source={{ uri: restaurant?.logo || placeholderLogo }}
+          style={styles.restaurantLogo}
+          resizeMode="cover"
+        />
 
-      <FlatList
-        data={orders}
-        keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
-        renderItem={({ item }) => (
-          <OrderCard order={item} onPress={() => handleOrderPress(item)} />
-        )}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyTitle}>No orders available</Text>
-            <Text style={styles.emptySubtitle}>
-              New orders will appear here when customers place requests nearby.
-            </Text>
+        <View style={styles.cardContent}>
+          <Text style={styles.restaurantName} numberOfLines={1}>
+            {restaurant?.name || 'Unknown Restaurant'}
+          </Text>
+
+          <View style={styles.metaRow}>
+            <View style={styles.payoutBlock}>
+              <Text style={styles.payoutLabel}>PAYOUT</Text>
+              <Text style={styles.payoutValue}>
+                {payout} <Text style={styles.currency}>{currency}</Text>
+              </Text>
+            </View>
+
+            <View style={styles.distanceBlock}>
+              <Text style={styles.distanceValue}>
+                {estimatedDistance ?? '—'} km
+              </Text>
+              {estimatedTime && (
+                <Text style={styles.timeValue}>≈ {estimatedTime} min</Text>
+              )}
+            </View>
           </View>
-        }
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor="#FF6B35"
-            colors={['#FF6B35']}
-          />
-        }
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
-    </SafeAreaView>
+        </View>
+
+        <View style={styles.chevronContainer}>
+          <Text style={styles.chevron}>›</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
   );
 };
+
+export default OrderCard
 
 const styles = StyleSheet.create({
   container: {
@@ -250,5 +207,3 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 });
-
-export default AvailableOrdersScreen;
