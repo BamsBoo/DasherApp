@@ -1,38 +1,32 @@
-import {
-    createStackNavigator,
+import React from 'react';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { NavigationContainer } from '@react-navigation/native';
 
-} from '@react-navigation/stack'
-import { NavigationContainer } from '@react-navigation/native'
-import { SafeAreaProvider } from 'react-native-safe-area-context'
-import ActiveDeliveryScreen from '../screens/ActiveDeliveryScreen'
-import AvailableOrdersScreen from '../screens/AvailableOrdersScreen'
-import OrderDetailsScreen from '../screens/OrderDetailsScreen'
+import ActiveDeliveryScreen from '../screens/ActiveDeliveryScreen';
+import AvailableOrdersScreen from '../screens/AvailableOrdersScreen';
+import OrderDetailsScreen from '../screens/OrderDetailsScreen';
 
-const Stack = createStackNavigator()
+const Stack = createNativeStackNavigator();
+
 function ApplicationNavigator() {
-
-
-    return (
-        <SafeAreaProvider>
-            <NavigationContainer>
-                <Stack.Navigator screenOptions={{ headerShown: false }}>
-                    <Stack.Screen
-                        name="AvailableOrdersScreen"
-                        component={AvailableOrdersScreen}
-                    />
-                        <Stack.Screen
-                        name="OrderDetailsScreen"
-                        component={OrderDetailsScreen}
-                    />
-                        <Stack.Screen
-                        name="ActiveDeliveryScreen"
-                        component={ActiveDeliveryScreen}
-                    />
-                </Stack.Navigator>
-            </NavigationContainer>
-        </SafeAreaProvider>
-    )
-
+  return (
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen
+          name="AvailableOrders"
+          component={AvailableOrdersScreen}
+        />
+        <Stack.Screen
+          name="OrderDetails"
+          component={OrderDetailsScreen}
+        />
+        <Stack.Screen
+          name="ActiveDelivery"
+          component={ActiveDeliveryScreen}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
 }
 
-export default ApplicationNavigator
+export default ApplicationNavigator;
