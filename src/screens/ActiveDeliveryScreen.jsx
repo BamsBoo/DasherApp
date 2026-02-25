@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   Alert,
   StyleSheet,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useOrdersStore } from '../store/ordersStore';
@@ -13,6 +14,7 @@ import { useOrdersStore } from '../store/ordersStore';
 const ActiveDeliveryScreen = ({ navigation }) => {
   const order = useOrdersStore(state => state.activeOrder);
   const updateStatus = useOrdersStore(state => state.updateActiveOrderStatus);
+  const [loading, setLoading] = useState(false);
 
   if (!order) {
     return (
@@ -26,7 +28,10 @@ const ActiveDeliveryScreen = ({ navigation }) => {
   }
 
   const handlePrimaryAction = () => {
-    try {
+  try {
+    setLoading(true);
+
+    setTimeout(() => {
       const updated = updateStatus();
 
       if (!updated) {
@@ -35,10 +40,15 @@ const ActiveDeliveryScreen = ({ navigation }) => {
           routes: [{ name: 'AvailableOrders' }],
         });
       }
-    } catch (e) {
-      Alert.alert('Error', e.message);
-    }
-  };
+
+      setLoading(false);
+    }, 1500); // 1.5 second delay
+
+  } catch (e) {
+    setLoading(false);
+    Alert.alert('Error', e.message);
+  }
+};
 
   const buttonLabel =
     order.status === 'accepted'
@@ -99,12 +109,20 @@ const ActiveDeliveryScreen = ({ navigation }) => {
         </View>
 
         {/* Action Button */}
-        <TouchableOpacity
-          style={styles.acceptButton}
-          onPress={handlePrimaryAction}
-        >
-          <Text style={styles.acceptText}>{buttonLabel}</Text>
-        </TouchableOpacity>
+       <TouchableOpacity
+  style={[
+    styles.acceptButton,
+    loading && { opacity: 0.7 }
+  ]}
+  onPress={handlePrimaryAction}
+  disabled={loading}
+>
+  {loading ? (
+    <ActivityIndicator color="#fff" />
+  ) : (
+    <Text style={styles.acceptText}>{buttonLabel}</Text>
+  )}
+</TouchableOpacity>
       </View>
     </SafeAreaView>
   );

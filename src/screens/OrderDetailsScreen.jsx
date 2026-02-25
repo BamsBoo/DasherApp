@@ -18,20 +18,24 @@ const OrderDetailsScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(false);
 
   const handleAccept = async () => {
-    try {
-      setLoading(true);
-      acceptOrder(order.id);
+  try {
+    setLoading(true);
 
+    acceptOrder(order.id);
+
+    setTimeout(() => {
       navigation.reset({
         index: 0,
         routes: [{ name: 'ActiveDelivery' }],
       });
-    } catch (e) {
-      Alert.alert('Error', e.message);
-    } finally {
       setLoading(false);
-    }
-  };
+    }, 1500); // 1.5 second delay (adjust as needed)
+
+  } catch (e) {
+    setLoading(false);
+    Alert.alert('Error', e.message);
+  }
+};
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>

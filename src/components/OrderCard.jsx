@@ -1,21 +1,35 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   ActivityIndicator,
-  FlatList,
   TouchableOpacity,
   StyleSheet,
-  RefreshControl,
   Image,
-  Platform,
 } from 'react-native';
 
 const OrderCard = ({ order, onPress }) => {
   const { restaurant, payout, currency = 'PHP', estimatedDistance, estimatedTime } = order;
+  const [ready, setReady] = useState(false);
 
-  // Placeholder for restaurant logo (replace with real URL when available)
-  const placeholderLogo = "";
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setReady(true);
+    }, 500); // delay card render
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Optional loading placeholder
+  if (!ready) {
+    return (
+      <View style={[styles.card, styles.loadingCard]}>
+        <ActivityIndicator size="small" />
+      </View>
+    );
+  }
+
+  const placeholderLogo = '';
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.88}>
@@ -58,12 +72,17 @@ const OrderCard = ({ order, onPress }) => {
   );
 };
 
-export default OrderCard
+export default OrderCard;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f7fa',
+  },
+    loadingCard: {
+    height: 96,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   center: {
     flex: 1,
@@ -76,7 +95,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#0f172a',
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? 16 : 8,
+   
     paddingBottom: 12,
     backgroundColor: '#ffffff',
     borderBottomWidth: StyleSheet.hairlineWidth,
