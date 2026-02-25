@@ -1,49 +1,46 @@
-// src/store/ordersStore.js
-import ordersData from '../mocks/mockOrders.json';
+import { create } from 'zustand';
+import ordersData from '../mock/mockOrders.json';
 
-const initialOrders = ordersData.orders || ordersData || [];
+export const useOrdersStore = create((set, get) => ({
+  availableOrders: ordersData.orders || ordersData || [],
+  activeOrder: null,
 
-let availableOrders = [...initialOrders];
-let activeOrder = null;
+  acceptOrder: (orderId) => {
+    const { availableOrders, activeOrder } = get();
 
-export const getAvailableOrders = () => availableOrders;
-export const getActiveOrder = () => activeOrder;
+    if (activeOrder) {
+      throw new Error('You already have an active delivery');
+    }
 
-/**
- * Accept order → move from available → active
- */
-export const acceptOrderAction = (orderId) => {
-  const index = availableOrders.findIndex(o => o.id === orderId);
-  if (index === -1) throw new Error('Order not found');
+    const index = availableOrders.findIndex(o => o.id === orderId);
+    if (index === -1) throw new Error('Order not found');
 
-  const order = availableOrders[index];
+    const order = { ...availableOrders[index], status: 'accepted' };
 
-  if (order.status !== 'pending') {
-    throw new Error('Order is no longer available');
-  }
+    set({
+      activeOrder: order,
+      availableOrders: availableOrders.filter(o => o.id !== orderId),
+    });
 
-  order.status = 'accepted';
-  activeOrder = { ...order };
-  availableOrders.splice(index, 1);
+    return order;
+  },
 
-  return activeOrder;
-};
+  updateActiveOrderStatus: () => {
+    const { activeOrder } = get();
+    if (!activeOrder) throw new Error('No active order');
 
-/**
- * Progress active order status
- * accepted → picked_up → completed
- */
-export const updateActiveOrderStatus = () => {
-  if (!activeOrder) throw new Error('No active order');
+    if (activeOrder.status === 'accepted') {
+      set({
+        activeOrder: { ...activeOrder, status: 'Picked Up' },
+      });
+      return { ...activeOrder, status: 'Picked Up' };
+    }
 
-  if (activeOrder.status === 'accepted') {
-    activeOrder.status = 'picked_up';
-  } else if (activeOrder.status === 'picked_up') {
-    activeOrder.status = 'completed';
-    activeOrder = null; // clear active order
-  } else {
+    if (activeOrder.status === 'Picked Up') {
+      set({ activeOrder: null });
+      return null; // completed
+    }
+
     throw new Error('Invalid order state');
-  }
-
-  return activeOrder;
-};
+  },
+}));

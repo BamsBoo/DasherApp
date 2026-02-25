@@ -1,74 +1,21 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React from 'react';
 import {
   View,
   Text,
-  ActivityIndicator,
   FlatList,
-  TouchableOpacity,
   StyleSheet,
-  RefreshControl,
-  Image,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { fetchOrders } from '../services/fetchOrders';
 import OrderCard from '../components/OrderCard';
-
+import { useOrdersStore } from '../store/ordersStore';
 
 const AvailableOrdersScreen = ({ navigation }) => {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState(null);
-
-  const loadOrders = useCallback(async (isRefresh = false) => {
-    if (!isRefresh) setLoading(true);
-    setError(null);
-
-    try {
-      const data = await fetchOrders();
-      setOrders(data || []);
-    } catch (err) {
-      console.error('Failed to fetch orders:', err);
-      setError('Could not load orders. Please check your connection and try again.');
-    } finally {
-      setLoading(false);
-      if (isRefresh) setRefreshing(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadOrders();
-  }, [loadOrders]);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadOrders(true);
-  };
+  const orders = useOrdersStore(state => state.availableOrders);
 
   const handleOrderPress = (order) => {
     navigation.navigate('OrderDetails', { order });
   };
-
-  if (loading && !refreshing) {
-    return (
-      <SafeAreaView style={styles.center} edges={['top', 'left', 'right']}>
-        <ActivityIndicator size="large" color="#FF6B35" />
-        <Text style={styles.loadingText}>Finding available orders...</Text>
-      </SafeAreaView>
-    );
-  }
-
-  if (error) {
-    return (
-      <SafeAreaView style={styles.center} edges={['top', 'left', 'right']}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={() => loadOrders()}>
-          <Text style={styles.retryText}>Try Again</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -76,7 +23,7 @@ const AvailableOrdersScreen = ({ navigation }) => {
 
       <FlatList
         data={orders}
-        keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
+        keyExtractor={item => item.id.toString()}
         renderItem={({ item }) => (
           <OrderCard order={item} onPress={() => handleOrderPress(item)} />
         )}
@@ -88,20 +35,13 @@ const AvailableOrdersScreen = ({ navigation }) => {
             </Text>
           </View>
         }
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor="#FF6B35"
-            colors={['#FF6B35']}
-          />
-        }
         contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
       />
     </SafeAreaView>
   );
 };
+
+export default AvailableOrdersScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -251,4 +191,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AvailableOrdersScreen;
+

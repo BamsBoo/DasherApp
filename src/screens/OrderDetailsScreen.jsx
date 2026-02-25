@@ -2,103 +2,97 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
   Alert,
   ScrollView,
+  StyleSheet,
+  Platform,
 } from 'react-native';
-import { acceptOrder } from '../services/acceptOrder';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useOrdersStore } from '../store/ordersStore';
 
 const OrderDetailsScreen = ({ route, navigation }) => {
   const { order } = route.params;
+  const acceptOrder = useOrdersStore(state => state.acceptOrder);
   const [loading, setLoading] = useState(false);
 
   const handleAccept = async () => {
     try {
       setLoading(true);
+      acceptOrder(order.id);
 
-      const updatedOrder = await acceptOrder(order.id);
-
-      Alert.alert('Success', 'Delivery Accepted!', [
-        {
-          text: 'OK',
-          onPress: () => {
-            navigation.navigate('ActiveDelivery'); // ← change to your actual route name
-            // navigation.goBack();                // optional – depending on your flow
-          },
-        },
-      ]);
-    } catch (error) {
-      Alert.alert('Error', error?.message || 'Could not accept this order');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'ActiveDelivery' }],
+      });
+    } catch (e) {
+      Alert.alert('Error', e.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>←</Text>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      {/* Header */}
+      <Text style={styles.screenTitle}>Order Details</Text>
+
+      <ScrollView contentContainerStyle={styles.content}>
+        {/* Customer */}
+         <View style={styles.card}>
+         <Text style={styles.sectionLabel}>Customer</Text>
+         <Text style={styles.sectionValue}>
+             {order.customer?.name || 'Unknown customer'}
+         </Text>
+        </View>
+        
+        {/* Pickup */}
+        <View style={styles.card}>
+          <Text style={styles.sectionLabel}>Pickup</Text>
+          <Text style={styles.sectionValue}>{order.restaurant?.name}</Text>
+          <Text style={styles.subText}>{order.restaurant?.address}</Text>
+        </View>
+
+         {/* Items */}
+        <View style={styles.card}>
+          <Text style={styles.sectionLabel}>Items to Pick Up</Text>
+
+          {order.items?.length ? (
+            order.items.map((item, index) => (
+              <View key={index} style={styles.itemRow}>
+                <Text style={styles.itemQty}>{item.quantity}x {item.name}</Text>
+              </View> 
+            ))
+          ) : (
+            <Text style={styles.subText}>No item details provided</Text>
+          )}
+          <Text style={styles.sectionValue}>Total: PHP {order.payout}</Text>
+        </View>
+        
+        
+
+        {/* Drop-off */}
+        <View style={styles.card}>
+          <Text style={styles.sectionLabel}>Drop-off</Text>
+          <Text style={styles.sectionValue}>{order.customer?.address}</Text>
+          <Text style={styles.subText}>{order.customer?.deliveryNotes}</Text>
+        </View>
+
+        {/* Accept Button */}
+        <TouchableOpacity
+          style={[styles.acceptButton, loading && styles.acceptButtonDisabled]}
+          onPress={handleAccept}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.acceptText}>Accept Delivery</Text>
+          )}
         </TouchableOpacity>
-
-        <Text style={styles.headerTitle}>Order Details</Text>
-
-        <View style={{ width: 24 }} />
-      </View>
-
-      {/* Customer Info */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Customer</Text>
-        <Text style={styles.bold}>{order.customer?.name || '—'}</Text>
-      </View>
-
-      {/* Pickup */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Pickup</Text>
-        <Text style={styles.bold}>{order.restaurant?.name || '—'}</Text>
-        <Text>{order.restaurant?.address || 'No address'}</Text>
-      </View>
-
-      {/* Dropoff */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Drop-off</Text>
-        <Text style={styles.bold}>{order.customer?.name || '—'}</Text>
-        <Text>{order.customer?.address || 'No address'}</Text>
-        <Text style={styles.note}>
-          Notes: {order.customer?.deliveryNotes || 'None'}
-        </Text>
-      </View>
-
-      {/* Items */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Items</Text>
-        {order.items?.length > 0 ? (
-          order.items.map((item, index) => (
-            <Text key={index} style={styles.itemText}>
-              • {item.quantity}× {item.name}
-              {item.notes ? ` (${item.notes})` : ''}
-            </Text>
-          ))
-        ) : (
-          <Text style={styles.itemText}>No items</Text>
-        )}
-      </View>
-
-      {/* Accept Button */}
-      <TouchableOpacity
-        style={[styles.acceptButton, loading && styles.acceptButtonDisabled]}
-        onPress={handleAccept}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.acceptText}>Accept Delivery</Text>
-        )}
-      </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -106,59 +100,61 @@ export default OrderDetailsScreen;
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    backgroundColor: '#f8fafc',
-    flexGrow: 1,
+    flex: 1,
+    backgroundColor: '#f5f7fa',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
-  headerTitle: {
-    fontSize: 20,
+
+  /* Header (same as Available Orders) */
+  screenTitle: {
+    fontSize: 28,
     fontWeight: '700',
     color: '#0f172a',
-  },
-  backText: {
-    fontSize: 32,
-    fontWeight: '600',
-    color: '#0f172a',
-  },
-  card: {
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? 16 : 8,
+    paddingBottom: 12,
     backgroundColor: '#ffffff',
-    padding: 16,
-    borderRadius: 14,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#e2e8f0',
   },
-  sectionTitle: {
-    fontSize: 14,
+
+  content: {
+    padding: 16,
+    paddingBottom: 24,
+  },
+
+  /* Card */
+  card: {
+    marginBottom: 14,
+    borderRadius: 16,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+
+  sectionLabel: {
+    fontSize: 13,
     fontWeight: '600',
     color: '#64748b',
-    marginBottom: 6,
+    marginBottom: 4,
   },
-  bold: {
-    fontSize: 16,
+  sectionValue: {
+    fontSize: 17,
     fontWeight: '600',
     color: '#1e293b',
-    marginBottom: 4,
   },
-  note: {
-    marginTop: 6,
-    fontStyle: 'italic',
-    color: '#475569',
+  subText: {
+    fontSize: 14,
+    color: '#64748b',
+    marginTop: 2,
   },
-  itemText: {
-    fontSize: 15,
-    marginBottom: 4,
-    color: '#334155',
-  },
+
+  /* Button */
   acceptButton: {
     backgroundColor: '#16a34a',
     paddingVertical: 16,
@@ -175,4 +171,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
+  itemPrice: {
+  fontSize: 14,
+  fontWeight: '600',
+  color: '#0f172a',
+},
+
 });
